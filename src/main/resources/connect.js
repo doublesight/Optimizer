@@ -12,21 +12,26 @@ window.onload = function() {
 
         ws.onopen = function() {
             // Web Socket is connected, send data using send()
-            ws.send("Message to send");
         };
 
         ws.onmessage = function(evt) {
-            var received_msg = evt.data;
-            window.alert(received_msg);
+            	console.log(evt.data);
+            	drawImage(evt.data);
         };
 
         ws.onclose = function() {
             // websocket is closed.
-            window.alert("Connection is closed...");
         };
+            
 
     } else {
         // The browser doesn't support WebSocket
         window.alert("WebSocket NOT supported by your Browser!");
     }
 };
+
+function drawImage(imgString){
+	"use strict";
+    var img = document.getElementById("img");
+    img.src = "data:image/png;base64,"+(imgString);
+}
