@@ -9,5 +9,5 @@ public class Campaign {
     byte[] media;
     int mediaType;
     Map<TagType,Float> interestingTags = new HashMap<>();
-}
 
+}

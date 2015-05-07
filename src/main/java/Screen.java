@@ -7,6 +7,9 @@ public class Screen implements Runnable {
     protected Campaign currentCampaign = null;
     protected String url;
 
+
+
+
     public Screen(String url) {
         this.url = url;
     }
@@ -18,6 +21,26 @@ public class Screen implements Runnable {
 
     @Override
     public void run() {
+        try {
+            wait();
+        } catch (InterruptedException e) {
+            e.printStackTrace();
+        }
+        System.out.println("Something");
+    }
 
+    protected void getBestCampaign(){
+
+    }
+
+
+
+
+
+    protected void sendDataTOClient(Campaign candidateCampaign){
+        if(url != null && currentCampaign != candidateCampaign){
+            //Logic to send the media to the client here
+        }
+        currentCampaign = candidateCampaign;
     }
 }
