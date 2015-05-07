@@ -59,7 +59,7 @@ public class PointOfInterest {
      * @return
      */
     protected double calculateSizeBonus(){
-        return Math.log(expectedDimension) / Math.log(logBase);
+        return Math.log(expectedDimension) / Math.log(logBase) / sizeBonus;
     }
 
 

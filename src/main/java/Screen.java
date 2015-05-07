@@ -103,8 +103,11 @@ public class Screen implements Runnable {
         for (TagType type : campaign.interestingTags.keySet()) {
             Stream<PointOfInterest> usefulPOIs = pois.stream().filter(poi -> poi.tagType == type);
             double tmpRes = usefulPOIs.mapToDouble(this::calculatePOIValue).sum();
-            //TODO: query some open API to get the weather at the coordinates
-            result += tmpRes * campaign.interestingTags.get(type) * campaign.calculateScoreBasedOnContext(2);
+
+            result += tmpRes
+                    * campaign.interestingTags.get(type)
+                    //TODO: query some open API to get the weather at the coordinates
+                    * campaign.calculateScoreBasedOnContext(2);
         }
         return result;
     }
@@ -116,9 +119,9 @@ public class Screen implements Runnable {
      * @return The value.
      */
     protected double calculatePOIValue(PointOfInterest poi) {
-        return
-                (1 / Math.pow(coordinate.calculateDistance(poi.coordinate), 2) / distancePenalty) *
-                        poi.calculateScoreBasedOnContext();
+        return Math.pow(coordinate.calculateDistance(poi.coordinate), 2)
+                * distancePenalty
+                * poi.calculateScoreBasedOnContext();
     }
 
 
