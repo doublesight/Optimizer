@@ -8,6 +8,6 @@ public class Campaign {
 
     byte[] media;
     int mediaType;
-    Map<TagType,Float> interestingTags = new HashMap<>();
+    Map<TagType,Double> interestingTags = new HashMap<>();
 
 }

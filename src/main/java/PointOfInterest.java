@@ -3,8 +3,7 @@
  */
 public class PointOfInterest {
 
-    protected double latitude;
-    protected double longitude;
+    protected Coordinate coordinate;
     protected TagType tagType;
 
 
