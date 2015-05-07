@@ -1,4 +1,3 @@
-import java.util.Collection;
 import java.util.List;
 import java.util.concurrent.locks.Condition;
 import java.util.concurrent.locks.Lock;
@@ -31,8 +30,9 @@ public class Screen implements Runnable {
      * Just after the handshake the screen should provide
      * its coordinates which will be used to perform
      * the computation.
+     *
      * @param coordinate Coordinates of the screen
-     * @param url WebSocket url to which the data will be sent
+     * @param url        WebSocket url to which the data will be sent
      */
     public Screen(Coordinate coordinate, String url) {
         this.coordinate = coordinate;
@@ -42,11 +42,10 @@ public class Screen implements Runnable {
     /**
      * The run Method check a condition indefinitely and block at every loop.
      * It is the main thread that must signal it to wake up (on request, on campaign added, etc.)
-     *
      */
     @Override
     public void run() {
-        while (!Thread.interrupted()){
+        while (!Thread.interrupted()) {
             try {
                 lock.lock();
                 condition.await();
@@ -63,12 +62,12 @@ public class Screen implements Runnable {
     /**
      * Method that must be called from the main thread to resume the computation
      */
-    public void peformComputation(){
+    public void peformComputation() {
         try {
             lock.lock();
             condition.signal();
-        } catch (Exception e){}
-        finally {
+        } catch (Exception e) {
+        } finally {
             lock.unlock();
         }
     }
@@ -76,15 +75,15 @@ public class Screen implements Runnable {
     /**
      * The method that starts the magic happens
      */
-    protected void getBestCampaign(){
-        if(campaigns == null || campaigns.size() == 0)
+    protected void getBestCampaign() {
+        if (campaigns == null || campaigns.size() == 0)
             return;
         Campaign candidate = null;
         double minScore = Double.MAX_VALUE;
 
-        for(Campaign c: campaigns){
+        for (Campaign c : campaigns) {
             double tmpValue = getCampaignScore(c);
-            if(candidate == null || minScore > tmpValue)
+            if (candidate == null || minScore > tmpValue)
                 candidate = c;
         }
 
@@ -95,36 +94,42 @@ public class Screen implements Runnable {
      * For each campaign we create a score.
      * To do so we need to filter POIs with tags
      * relevant to that campaign
+     *
      * @param campaign The current campaign under evaluation
      * @return The score of the campaign
      */
-    protected double getCampaignScore(Campaign campaign){
+    protected double getCampaignScore(Campaign campaign) {
         double result = 0D;
-        for(TagType type: campaign.interestingTags.keySet()) {
+        for (TagType type : campaign.interestingTags.keySet()) {
             Stream<PointOfInterest> usefulPOIs = pois.stream().filter(poi -> poi.tagType == type);
             double tmpRes = usefulPOIs.mapToDouble(this::calculatePOIValue).sum();
-            result += tmpRes * campaign.interestingTags.get(type);
+            //TODO: query some open API to get the weather at the coordinates
+            result += tmpRes * campaign.interestingTags.get(type) * campaign.calculateScoreBasedOnContext(2);
         }
         return result;
     }
 
     /**
      * Method that calculates the value of this POI with respect to this screen.
+     *
      * @param poi The point of Interest under consideration
      * @return The value.
      */
     protected double calculatePOIValue(PointOfInterest poi) {
-        return 1/Math.pow(coordinate.calculateDistance(poi.coordinate),2)/distancePenalty;
+        return
+                (1 / Math.pow(coordinate.calculateDistance(poi.coordinate), 2) / distancePenalty) *
+                        poi.calculateScoreBasedOnContext();
     }
 
 
     /**
      * Method that given an url sends the media to the client associated.
      * It uses WebSockets (for now).
+     *
      * @param candidateCampaign The campaign that optimizes value for this screen.
      */
-    protected void sendDataTOClient(Campaign candidateCampaign){
-        if(url != null && currentCampaign != candidateCampaign){
+    protected void sendDataTOClient(Campaign candidateCampaign) {
+        if (url != null && currentCampaign != candidateCampaign) {
             //Logic to send the media to the client here
         }
         currentCampaign = candidateCampaign;

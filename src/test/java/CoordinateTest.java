@@ -11,6 +11,6 @@ public class CoordinateTest {
     public void testCalculateDistance() throws Exception {
         Coordinate origin = new Coordinate(0,0);
         Coordinate other  = new Coordinate(1,1);
-        assertTrue("Distance is almost equal", origin.calculateDistance(other) - Math.sqrt(2)< epsilon);
+        assertEquals(origin.calculateDistance(other), Math.sqrt(2), epsilon);
     }
 }

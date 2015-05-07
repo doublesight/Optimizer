@@ -18,7 +18,7 @@ public class Main {
         ExecutorService es = Executors.newFixedThreadPool(nScreens);
 
         for(int i = 0; i < nScreens; ++i){
-            screens[i] = new Screen(null);
+            screens[i] = new Screen(null, null);
             es.submit(screens[i]);
         }
 
