@@ -29,10 +29,12 @@ public class Main {
             e.printStackTrace();
         }
 
-        /*for(Screen s: screens)
-            s.relase();
 
-        es.shutdown();*/
+
+        //es.shutdown();
+
+        WebSocketServer s = new WebSocketServer();
+        s.runServer();
 
 
     }
