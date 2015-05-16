@@ -72,18 +72,18 @@ public class TestScreen {
         tags6.put(TagType.GYM, 1D);
 
         //Akademiska
-        tags7.put(TagType.GYM, 1D);
+        tags7.put(TagType.GYM, 0.1D);
 
         final PointOfInterest poi1 = new PointOfInterest("Mc Donalds", new Coordinate(57.708365F, 11.970181F), tags1), poi2 = new PointOfInterest("Starbucks", new Coordinate(57.708706F, 11.972493F), tags2), poi3 = new PointOfInterest("Elgiganten", new Coordinate(57.707603F, 11.970117F), tags3), poi4 = new PointOfInterest("Esprit men", new Coordinate(57.707158F, 11.968023F), tags4), poi5 = new PointOfInterest("H&M", new Coordinate(57.708675F, 11.970046F), tags5), poi6 = new PointOfInterest("Nordic Wellness", new Coordinate(57.705388F, 11.964836F), tags6), poi7 = new PointOfInterest("Akademiska", new Coordinate(57.707717F, 11.978705F), tags7);
 
         Collection<PointOfInterest> pois = new ArrayList<>();
         pois.add(poi1);
-        pois.add(poi2);
-        pois.add(poi3);
+//        pois.add(poi2);
+//        pois.add(poi3);
         pois.add(poi4);
         pois.add(poi5);
-        pois.add(poi6);
-        pois.add(poi7);
+//        pois.add(poi6);
+//        pois.add(poi7);
 
         sut1.addPois(pois);
         sut2.addPois(pois);
@@ -91,6 +91,7 @@ public class TestScreen {
         final Campaign bestForScreen1 = sut1.getBestCampaign();
         final Campaign bestForScreen2 = sut2.getBestCampaign();
 
+        System.out.println(bestForScreen1);
 //        System.out.println(sut1.getCampaignScore(c3));
     }
 }

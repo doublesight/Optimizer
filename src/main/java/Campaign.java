@@ -45,7 +45,7 @@ public class Campaign {
     private double calculateWeatherFactor(WEATHER_TYPE currentWeather) {
         if (preferredWeather == null)
             return 0;
-        return Math.abs(currentWeather.ordinal() - preferredWeather.ordinal()) / WEATHER_TYPE.values().length;
+        return 1 - Math.abs(currentWeather.ordinal() - preferredWeather.ordinal());
     }
 
     /**

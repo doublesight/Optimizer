@@ -109,6 +109,7 @@ public class Screen implements Runnable {
 
         CurrentWeather currentWeather = owm.currentWeatherByCoordinates(coordinate.getLatitude(), coordinate.getLongitude());
 
+        //If this throws NPE you need to run again (Internet conn. timed out)
         final float humidity =
                 currentWeather.getMainInstance().getHumidity();
         if (humidity > 80)
