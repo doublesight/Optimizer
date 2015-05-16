@@ -12,6 +12,7 @@ repositories {
 }
 
 dependencies {
+    compile 'net.aksingh:owm-japis:2.5.0.3'
     compile 'commons-io:commons-io:2.4'
     compile 'org.glassfish.tyrus:tyrus-server:1.10'
     compile 'org.glassfish.tyrus:tyrus-container-grizzly-server:1.10'

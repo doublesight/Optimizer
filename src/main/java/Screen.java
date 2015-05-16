@@ -1,11 +1,14 @@
+import net.aksingh.owmjapis.CurrentWeather;
+import net.aksingh.owmjapis.OpenWeatherMap;
+
+import java.time.LocalTime;
+import java.util.ArrayList;
+import java.util.Collection;
 import java.util.List;
-import java.util.concurrent.locks.Condition;
-import java.util.concurrent.locks.Lock;
-import java.util.concurrent.locks.ReentrantLock;
 import java.util.stream.Stream;
 
 /**
- * Super easy -> If the name ends with Penalty multiply, if with Bonus divide.
+ * For the demo each screen performs the calculations. We acknowledge that this is of course not the way to go. In the real implementation, calculations will be executed following a centralized architecture. This is not only much more efficient computationally speaking, but it also allows the system to know which contents should be sent where at every point in time, converting the screens in simple media players that reproduce what they get sent.
  */
 public class Screen implements Runnable {
 
@@ -13,17 +16,11 @@ public class Screen implements Runnable {
     protected static final double distancePenalty = 1.0D;
 
     //Keep tracks of the best campaign associated with the server
-    protected Campaign currentCampaign = null;
+//    protected Campaign currentCampaign = null;
     protected String url;
     protected Coordinate coordinate;
-    protected List<Campaign> campaigns;
-    protected List<PointOfInterest> pois;
-
-    /*
-        Badass multi-thread stuff in here. Deal with it
-     */
-    Lock lock = new ReentrantLock();
-    Condition condition = lock.newCondition();
+    protected final List<Campaign> campaigns = new ArrayList<>();
+    protected final List<PointOfInterest> pois = new ArrayList<>();
 
     /**
      * When a screen connects to the server we create an url.
@@ -32,12 +29,20 @@ public class Screen implements Runnable {
      * the computation.
      *
      * @param coordinate Coordinates of the screen
-     * @param url        WebSocket url to which the data will be sent
      */
-    public Screen(Coordinate coordinate, String url) {
+    public Screen(Coordinate coordinate) {
         this.coordinate = coordinate;
-        this.url = url;
+        this.url = null; //This will be the websocket url to which the data will be sent IRL
     }
+
+    public void addCampaigns(Collection<Campaign> x) {
+        campaigns.addAll(x);
+    }
+
+    public void addPois(Collection<PointOfInterest> x) {
+        pois.addAll(x);
+    }
+
 
     /**
      * The run Method check a condition indefinitely and block at every loop.
@@ -45,39 +50,15 @@ public class Screen implements Runnable {
      */
     @Override
     public void run() {
-        while (!Thread.interrupted()) {
-            try {
-                lock.lock();
-                condition.await();
-                getBestCampaign();
-            } catch (InterruptedException e) {
-                e.printStackTrace();
-            } finally {
-                lock.unlock();
-            }
-        }
-    }
-
-
-    /**
-     * Method that must be called from the main thread to resume the computation
-     */
-    public void peformComputation() {
-        try {
-            lock.lock();
-            condition.signal();
-        } catch (Exception e) {
-        } finally {
-            lock.unlock();
-        }
+        getBestCampaign();
     }
 
     /**
      * The method that starts the magic happens
      */
-    protected void getBestCampaign() {
+    protected Campaign getBestCampaign() {
         if (campaigns == null || campaigns.size() == 0)
-            return;
+            return null;
         Campaign candidate = null;
         double minScore = Double.MAX_VALUE;
 
@@ -87,7 +68,8 @@ public class Screen implements Runnable {
                 candidate = c;
         }
 
-        sendDataTOClient(candidate);
+        return candidate;
+//        sendDataToClient(candidate);
     }
 
     /**
@@ -100,28 +82,64 @@ public class Screen implements Runnable {
      */
     protected double getCampaignScore(Campaign campaign) {
         double result = 0D;
+        //For each tag
         for (TagType type : campaign.interestingTags.keySet()) {
-            Stream<PointOfInterest> usefulPOIs = pois.stream().filter(poi -> poi.tagType == type);
-            double tmpRes = usefulPOIs.mapToDouble(this::calculatePOIValue).sum();
+            //Narrow down the POIs to those containing these tags
+            Stream<PointOfInterest> usefulPOIs = pois.stream().filter(poi -> poi.tagMap.containsKey(type));
+            double tmpRes = 1;
+
+            PointOfInterest[] poiArray = (PointOfInterest[]) usefulPOIs.toArray();
+
+            for (PointOfInterest aPoiArray : poiArray) tmpRes += calculatePOIValue(aPoiArray, type, LocalTime.of(campaign.preferredTime.getHours(), campaign.preferredTime.getMinutes()), campaign.timePenalty);
 
             result += tmpRes
                     * campaign.interestingTags.get(type)
-                    //TODO: query some open API to get the weather at the coordinates
-                    * campaign.calculateScoreBasedOnContext(2);
+                    / campaign.calculateContextPenalties(getSimplifyWeatherHere(), System.currentTimeMillis());
         }
         return result;
+    }
+
+    /**
+     * Very dirty method, we know. It is just for the demo, we promise :D
+     */
+    private Campaign.WEATHER_TYPE getSimplifyWeatherHere() {
+        //Do not put your API keys in the code children, very bad practice
+        OpenWeatherMap owm = new OpenWeatherMap("a564b67a0c3fb3623baebb4f7a0f7f8f");
+
+        CurrentWeather currentWeather = owm.currentWeatherByCoordinates(coordinate.getLatitude(), coordinate.getLongitude());
+
+        final float humidity =
+                currentWeather.getMainInstance().getHumidity();
+        if (humidity > 80)
+            return Campaign.WEATHER_TYPE.STORM;
+
+        if (humidity > 60)
+            return Campaign.WEATHER_TYPE.RAIN;
+
+        //It is given in kelvin
+        final double celsius = currentWeather.getMainInstance().getTemperature() - 273.15;
+
+        if (celsius > 50)
+            return Campaign.WEATHER_TYPE.HELL_IS_ON_EARTH;
+        if (celsius > 40)
+            return Campaign.WEATHER_TYPE.SPANISH_SUMMER;
+        if (celsius > 30)
+            return Campaign.WEATHER_TYPE.KIND_OF_NICE;
+
+        return Campaign.WEATHER_TYPE.MEH;
     }
 
     /**
      * Method that calculates the value of this POI with respect to this screen.
      *
      * @param poi The point of Interest under consideration
+     * @param tag The tag
      * @return The value.
      */
-    protected double calculatePOIValue(PointOfInterest poi) {
+    protected double calculatePOIValue(PointOfInterest poi, TagType tag, LocalTime preferredTime, Double campaignPenalty) {
         return Math.pow(coordinate.calculateDistance(poi.coordinate), 2)
                 * distancePenalty
-                * poi.calculateScoreBasedOnContext();
+                * poi.calculateScoreBasedOnContext(tag, preferredTime, campaignPenalty);
     }
 
 
@@ -131,10 +149,10 @@ public class Screen implements Runnable {
      *
      * @param candidateCampaign The campaign that optimizes value for this screen.
      */
-    protected void sendDataTOClient(Campaign candidateCampaign) {
-        if (url != null && currentCampaign != candidateCampaign) {
-            //Logic to send the media to the client here
-        }
-        currentCampaign = candidateCampaign;
-    }
+//    protected void sendDataToClient(Campaign candidateCampaign) {
+//        if (url != null && currentCampaign != candidateCampaign) {
+//            //Logic to send the media to the client here
+//        }
+//        currentCampaign = candidateCampaign;
+//    }
 }
