@@ -1,5 +1,4 @@
-import java.time.LocalTime;
-import java.time.temporal.ChronoUnit;
+import java.util.Date;
 import java.util.Map;
 
 /**
@@ -17,48 +16,34 @@ public class PointOfInterest {
 
     protected Coordinate coordinate;
     protected final Map<TagType, Double> tagMap;
+    private String name;
 
-    public PointOfInterest(final Coordinate position, final Map<TagType, Double> tags) {
+    public PointOfInterest(final String _name, final Coordinate position, final Map<TagType, Double> tags) {
+        name = _name;
         coordinate = position;
         tagMap = tags;
     }
 
-    public double calculateScoreBasedOnContext(final TagType tag, LocalTime preferredTime, double timePenalty) {
-        return calculateSizeBonus() * calculateTimeScore(LocalTime.now(), preferredTime, timePenalty) * tagMap.get(tag);
+    public double calculateScoreBasedOnContext(final TagType tag, Date preferredTime) {
+        if (preferredTime == null)
+            return calculateSizeBonus() * tagMap.get(tag);
+        return calculateSizeBonus() * calculateTimeFactor(new Date(System.currentTimeMillis()), preferredTime) * tagMap.get(tag);
     }
 
-    /**
-     * The time difference in minutes multiplied by the penalty factor.
-     * Time is calculated from the shortest path;
-     * Examples:
-     * from 23.00 to 01.00 is 120 minutes
-     * from 01.00 to 23.00 is 120 minutes
-     *
-     * @param now current time
-     * @return the time score
-     */
-    protected double calculateTimeScore(LocalTime now, LocalTime preferredTime, double timePenalty) {
-        double res = ChronoUnit.MINUTES.between(preferredTime, now);
-        if (res < 0)
-            res += +1440;
-        else if (res > 720)
-            res = Math.abs(res - 1440);
+    private static final Double HOUR_WEIGHT = 60D, MINUTE_WEIGHT = 1D;
 
-        return res * timePenalty;
+    private double calculateTimeFactor(Date currentTimestamp, Date preferredTime) {
+        if (preferredTime == null)
+            return 1;
+        return 1 - (Math.abs((currentTimestamp.getHours() * HOUR_WEIGHT + currentTimestamp.getMinutes() * MINUTE_WEIGHT) - (preferredTime.getHours() * HOUR_WEIGHT + preferredTime.getMinutes() * MINUTE_WEIGHT)) / (12 * HOUR_WEIGHT));
     }
 
-
-    /**
-     * The expected amount of people associated with this point of interest.
-     * This factor needs to be leveled since if the data is not available
-     * it would be penalized too much. For this purpose we use a logarithm operation
-     * with base 20 (needs tuning)
-     *
-     * @return
-     */
     protected double calculateSizeBonus() {
         return Math.log(expectedDimension) / Math.log(logBase) / sizeBonus;
     }
 
 
+    public String getName() {
+        return name;
+    }
 }

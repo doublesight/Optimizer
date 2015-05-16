@@ -1,19 +1,13 @@
 import net.aksingh.owmjapis.CurrentWeather;
 import net.aksingh.owmjapis.OpenWeatherMap;
 
-import java.time.LocalTime;
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.List;
+import java.util.*;
 import java.util.stream.Stream;
 
 /**
  * For the demo each screen performs the calculations. We acknowledge that this is of course not the way to go. In the real implementation, calculations will be executed following a centralized architecture. This is not only much more efficient computationally speaking, but it also allows the system to know which contents should be sent where at every point in time, converting the screens in simple media players that reproduce what they get sent.
  */
 public class Screen implements Runnable {
-
-    //We could consider to use a quadratic distance penalty or something like that.
-    protected static final double distancePenalty = 1.0D;
 
     //Keep tracks of the best campaign associated with the server
 //    protected Campaign currentCampaign = null;
@@ -60,12 +54,14 @@ public class Screen implements Runnable {
         if (campaigns == null || campaigns.size() == 0)
             return null;
         Campaign candidate = null;
-        double minScore = Double.MAX_VALUE;
+        double minValue = Double.MAX_VALUE;
 
         for (Campaign c : campaigns) {
             double tmpValue = getCampaignScore(c);
-            if (candidate == null || minScore > tmpValue)
+            if (candidate == null || tmpValue < minValue) {
                 candidate = c;
+                minValue = tmpValue;
+            }
         }
 
         return candidate;
@@ -82,27 +78,32 @@ public class Screen implements Runnable {
      */
     protected double getCampaignScore(Campaign campaign) {
         double result = 0D;
-        //For each tag
         for (TagType type : campaign.interestingTags.keySet()) {
             //Narrow down the POIs to those containing these tags
             Stream<PointOfInterest> usefulPOIs = pois.stream().filter(poi -> poi.tagMap.containsKey(type));
             double tmpRes = 1;
 
-            PointOfInterest[] poiArray = (PointOfInterest[]) usefulPOIs.toArray();
+            for (Iterator<PointOfInterest> it = usefulPOIs.iterator(); it.hasNext(); ) {
+                final PointOfInterest poi = it.next();
+                tmpRes += calculatePOIScore(poi, type, campaign.preferredTime);
+            }
 
-            for (PointOfInterest aPoiArray : poiArray) tmpRes += calculatePOIValue(aPoiArray, type, LocalTime.of(campaign.preferredTime.getHours(), campaign.preferredTime.getMinutes()), campaign.timePenalty);
+            final double contextRelevancies = campaign.calculateContextRelevancies(getSimplifiedWeatherHere(), System.currentTimeMillis());
 
             result += tmpRes
                     * campaign.interestingTags.get(type)
-                    / campaign.calculateContextPenalties(getSimplifyWeatherHere(), System.currentTimeMillis());
+                    * contextRelevancies;
         }
+
+        System.out.println(campaign + ": " + result);
+
         return result;
     }
 
     /**
      * Very dirty method, we know. It is just for the demo, we promise :D
      */
-    private Campaign.WEATHER_TYPE getSimplifyWeatherHere() {
+    private Campaign.WEATHER_TYPE getSimplifiedWeatherHere() {
         //Do not put your API keys in the code children, very bad practice
         OpenWeatherMap owm = new OpenWeatherMap("a564b67a0c3fb3623baebb4f7a0f7f8f");
 
@@ -136,10 +137,9 @@ public class Screen implements Runnable {
      * @param tag The tag
      * @return The value.
      */
-    protected double calculatePOIValue(PointOfInterest poi, TagType tag, LocalTime preferredTime, Double campaignPenalty) {
+    protected double calculatePOIScore(PointOfInterest poi, TagType tag, Date preferredTime) {
         return Math.pow(coordinate.calculateDistance(poi.coordinate), 2)
-                * distancePenalty
-                * poi.calculateScoreBasedOnContext(tag, preferredTime, campaignPenalty);
+                * poi.calculateScoreBasedOnContext(tag, preferredTime);
     }
 
 
