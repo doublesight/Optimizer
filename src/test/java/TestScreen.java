@@ -1,5 +1,4 @@
 import java.text.ParseException;
-import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
@@ -12,7 +11,7 @@ public class TestScreen {
 
     @org.junit.Test
     public void testScreen() throws ParseException {
-        final Campaign c1 = new Campaign("ebook-sale", null, null), c2 = new Campaign("zara-summer", null, null), c3 = new Campaign("restaurant-suits-get-discount", null, new SimpleDateFormat("hh:mm").parse("12:00")), c4 = new Campaign("umbrellas-2x1", Campaign.WEATHER_TYPE.RAIN, null), c5 = new Campaign("gym-24/7-new-season", null, null);
+        final Campaign c1 = new Campaign("ebook-sale", null, null), c2 = new Campaign("zara-summe", null, null), c3 = new Campaign("restaurant", null, null), c4 = new Campaign("umbrella21", Campaign.WEATHER_TYPE.RAIN, null), c5 = new Campaign("gym247-new", null, null);
         final Map<TagType, Double> ratios1 = new HashMap<>(), ratios2 = new HashMap<>(), ratios3 = new HashMap<>(), ratios4 = new HashMap<>(), ratios5 = new HashMap<>();
 
         Collection<Campaign> campaigns = new ArrayList<>();
@@ -89,10 +88,9 @@ public class TestScreen {
         sut1.addPois(pois);
         sut2.addPois(pois);
 
-//        final Campaign bestForScreen1 = sut1.getBestCampaign();
+        final Campaign bestForScreen1 = sut1.getBestCampaign();
         final Campaign bestForScreen2 = sut2.getBestCampaign();
 
-//        Assert.assertEquals(c3, bestForScreen1);
 //        System.out.println(sut1.getCampaignScore(c3));
     }
 }

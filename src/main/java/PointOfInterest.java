@@ -18,6 +18,13 @@ public class PointOfInterest {
     protected final Map<TagType, Double> tagMap;
     private String name;
 
+    @Override
+    public String toString() {
+        return "PointOfInterest{" +
+                "name='" + name + '\'' +
+                '}';
+    }
+
     public PointOfInterest(final String _name, final Coordinate position, final Map<TagType, Double> tags) {
         name = _name;
         coordinate = position;

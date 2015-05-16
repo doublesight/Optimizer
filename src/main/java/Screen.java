@@ -54,13 +54,13 @@ public class Screen implements Runnable {
         if (campaigns == null || campaigns.size() == 0)
             return null;
         Campaign candidate = null;
-        double minValue = Double.MAX_VALUE;
+        double maxValue = Double.MIN_VALUE;
 
         for (Campaign c : campaigns) {
             double tmpValue = getCampaignScore(c);
-            if (candidate == null || tmpValue < minValue) {
+            if (candidate == null || tmpValue > maxValue) {
                 candidate = c;
-                minValue = tmpValue;
+                maxValue = tmpValue;
             }
         }
 
@@ -81,13 +81,13 @@ public class Screen implements Runnable {
         for (TagType type : campaign.interestingTags.keySet()) {
             //Narrow down the POIs to those containing these tags
             Stream<PointOfInterest> usefulPOIs = pois.stream().filter(poi -> poi.tagMap.containsKey(type));
-            double tmpRes = 1;
+            double tmpRes = 0;
 
             for (Iterator<PointOfInterest> it = usefulPOIs.iterator(); it.hasNext(); ) {
                 final PointOfInterest poi = it.next();
+                System.out.println(poi);
                 tmpRes += calculatePOIScore(poi, type, campaign.preferredTime);
             }
-
             final double contextRelevancies = campaign.calculateContextRelevancies(getSimplifiedWeatherHere(), System.currentTimeMillis());
 
             result += tmpRes
